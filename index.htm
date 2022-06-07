@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.7/dist/sweetalert2.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+        <v-card class="max-auto mt-5 ml-5" max-width="98%">
+        <v-btn class="white--text" rounded color="blue acent-2" @click="criarNovo()">Criar</v-btn>
+
+        <v-simple-table class="mt-5">
+            <template v-slot:default>
+                <thead>
+                    <tr class="light-blue darken-2">
+                    <th class="white--text">CODIGO</th>
+                    <th class="white--text">NOME</th>
+                    <th class="white--text">PREÇO</th>
+                    <th class="white--text">ESTOQUE</th>
+                    <th class="white--text">ACÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                    v-for="produto in produtos"
+                    :key="produto.codigo"
+                    >
+                    <td>{{ produto.codigo }}</td>
+                    <td>{{ produto.nome }}</td>
+                    <td>{{ produto.preco }}</td>
+                    <td>{{ produto.estoque }}</td>
+                    <td>
+                       <div>
+                        <v-btn
+                            class="ma-2"
+                            text
+                            icon
+                            color="blue lighten-2"
+                         @click="formEditar(produto.codigo, produto.nome, produto.preco, produto.estoque)">
+                            <v-icon>mdi-update</v-icon>
+                        </v-btn>
+
+                        <v-btn
+                            class="ma-2"
+                            text
+                            icon
+                            color="red lighten-2"
+                         @click="formDelete(produto.codigo)">
+                            <v-icon>mdi-delete</v-icon>
+                        </v-btn>
+                        </div>
+                    </tr>
+                </tbody>
+            </template>
+        </v-simple-table>
+        </v-card>  
+            <!-- Componente de Diálogo para CREAR y EDITAR -->
+            <v-dialog v-model="dialog" max-width="500">        
+                <v-card>
+                <v-card-title class="blue-grey darken-1 white--text">Produto</v-card-title>    
+                <v-card-text>            
+                    <v-form>             
+                    <v-container>
+                        <v-row>
+                        <input v-model="produto.codigo" hidden></input>
+                        <v-col cols="12" md="4">
+                            <v-text-field v-model="produto.nome" label="Nome" solo required>{{produto.nome}}</v-text-field>
+                        </v-col>
+                        <v-col cols="12" md="4">
+                            <v-text-field v-model="produto.preco" label="Preço" type="number" prefix="R$" solo required></v-text-field>
+                        </v-col>
+                        <v-col cols="12" md="4">
+                            <v-text-field v-model="produto.estoque" label="Estoque" type="number" solo required></v-text-field>
+                        </v-col>
+                        </v-row>
+                    </v-container>            
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn @click="dialog=false">Cancelar</v-btn>
+                    <v-btn @click="guardar()" type="submit" color="indigo" dark>Guardar</v-btn>
+                </v-card-actions>
+                </v-form>
+                </v-card>
+            </v-dialog>
+
+      </v-main>
+    </v-app>
+  </div>
+
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.7/dist/sweetalert2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js" integrity="sha512-quHCp3WbBNkwLfYUMd+KwBAgpVukJu5MncuQaWXgCrfgcxCJAq/fo+oqrRKOj+UKEmyMCG3tb8RB63W+EmrOBg==" crossorigin="anonymous"></script>
+  <script>
+      var url = "http://localhost/backend-crud-vue/crud.php";
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        data(){
+            return{
+                produtos:[],
+                dialog:false,
+            operacao: '',
+                produto:{
+                  codigo:null,
+                  nome:'',
+                  preco:'',
+                  estoque:''
+                }
+            }
+         },
+        created(){
+            this.mostrar();
+        },
+        methods: {
+            //Métodos para crud
+            mostrar:function(){
+                axios.post(url, {opcao:1})
+                .then(response =>{
+                    this.produtos = response.data;
+                })
+            },
+            crear:function(){
+                axios.post(url, {opcao:2, nome:this.produto.nome, preco:this.produto.preco, estoque:this.produto.estoque})
+                .then(response =>{
+                    this.mostrar();
+                });
+                this.produto.nome = "";
+                this.produto.estoque = "";
+                this.produto.preco = "";
+            },
+            editar:function(codigo, nome, preco, estoque){
+              axios.post(url, {opcao:3, codigo:this.produto.codigo, nome:this.produto.nome, preco:this.produto.preco, estoque:this.produto.estoque})
+                  .then(response =>{
+                    this.mostrar();
+              });  
+            },   
+            // Gusrdar e editar
+            guardar:function(){
+                if(this.operacao =='crear'){
+                    this.crear();
+                }
+                if(this.operacao =='editar'){
+                    this.editar();
+                }
+                this.dialog = false;
+            },
+            // Adicionar Produtos
+            criarNovo:function(){
+                this.dialog=true;
+                this.operacao='crear';
+            },
+            formDelete:function(codigo){
+                Swal.fire({
+                    title: '¿Confirma eliminar o registro?',   
+                    confirmButtonText: `Confirmar`,                  
+                    showCancelButton: true,                          
+                }).then((result) => {                
+                    if (result.isConfirmed) {      
+                        axios.post(url, {opcao:4, codigo:codigo}).then(response =>{           
+                            this.mostrar();
+                        });      
+                        Swal.fire('¡Eliminado!', '', 'success')
+                    } else if (result.isDenied) {                  
+                    }
+                });  
+            },
+            formEditar:function(codigo, nome, preco, estoque){                              
+              //capturamos los datos del registro seleccionado y los mostramos en el formulario
+              this.produto.codigo = codigo;
+              this.produto.nome = nome;                            
+              this.produto.preco = preco;
+              this.produto.estoque = estoque;                      
+              this.dialog=true;                            
+              this.operacao='editar';
+            }
+        },
+    })
+  </script>
+</body>
+</html>
